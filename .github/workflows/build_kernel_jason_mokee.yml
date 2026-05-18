@@ -193,23 +193,29 @@ jobs:
       - name: Set KSU and SUSFS for DEFCONFIG
         run: |
           cd $GITHUB_WORKSPACE/device_kernel
-          echo "CONFIG_KSU=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+          CONFIG_FILE=./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+          set_config() {
+            local key="${1%%=*}"
+            sed -i "/^${key}=/d" "$CONFIG_FILE"
+            echo "$1" >> "$CONFIG_FILE"
+          }
+          set_config "CONFIG_KSU=y"
           if [[ "${{ env.SUSFS_ENABLE }}" == "true" ]]; then
-            echo "CONFIG_KSU_SUSFS=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "# CONFIG_KSU_SUSFS_SUS_OVERLAYFS is not set" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-            echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+            set_config "CONFIG_KSU_SUSFS=y"
+            set_config "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y"
+            set_config "CONFIG_KSU_SUSFS_SUS_PATH=y"
+            set_config "CONFIG_KSU_SUSFS_SUS_MOUNT=y"
+            set_config "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y"
+            set_config "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y"
+            set_config "CONFIG_KSU_SUSFS_SUS_KSTAT=y"
+            set_config "# CONFIG_KSU_SUSFS_SUS_OVERLAYFS is not set"
+            set_config "CONFIG_KSU_SUSFS_TRY_UMOUNT=y"
+            set_config "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y"
+            set_config "CONFIG_KSU_SUSFS_SPOOF_UNAME=y"
+            set_config "CONFIG_KSU_SUSFS_ENABLE_LOG=y"
+            set_config "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y"
+            set_config "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y"
+            set_config "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y"
           fi
 
       - name: Set Pack Method and KernelSU and SUSFS
@@ -334,10 +340,16 @@ jobs:
       - name: Extra Kernel Options
         run: |
           cd $GITHUB_WORKSPACE/device_kernel
-          echo "CONFIG_CPU_BIG_ENDIAN=n" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-          echo "CONFIG_COMPAT_VDSO=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-          echo "CONFIG_LTO_NONE=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-          echo "CONFIG_INIT_STACK_NONE=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+          CONFIG_FILE=./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+          set_config() {
+            local key="${1%%=*}"
+            sed -i "/^${key}=/d" "$CONFIG_FILE"
+            echo "$1" >> "$CONFIG_FILE"
+          }
+          set_config "CONFIG_CPU_BIG_ENDIAN=n"
+          set_config "CONFIG_COMPAT_VDSO=y"
+          set_config "CONFIG_LTO_NONE=y"
+          set_config "CONFIG_INIT_STACK_NONE=y"
           
       - name: Added mkdtboimg to kernel (Experiment)
         if: env.HAVE_NO_DTBO == 'true'
@@ -363,10 +375,14 @@ jobs:
           git clone https://github.com/tomxi1997/lxc-docker-support-for-android.git lxc
           echo 'source "lxc/Kconfig"' >> "Kconfig"
 
-          echo "CONFIG_DOCKER=y" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-
-          sed -i '/CONFIG_ANDROID_PARANOID_NETWORK/d' ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
-          echo "# CONFIG_ANDROID_PARANOID_NETWORK is not set" >> ./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+          CONFIG_FILE=./arch/arm64/configs/${{ env.DEFCONFIG_NAME }}
+          set_config() {
+            local key="${1%%=*}"
+            sed -i "/^${key}=/d" "$CONFIG_FILE"
+            echo "$1" >> "$CONFIG_FILE"
+          }
+          set_config "CONFIG_DOCKER=y"
+          set_config "# CONFIG_ANDROID_PARANOID_NETWORK is not set"
 
           chmod +x $GITHUB_WORKSPACE/device_kernel/lxc/runcpatch.sh
           if [ -f $GITHUB_WORKSPACE/device_kernel/kernel/cgroup/cgroup.c ]; then
