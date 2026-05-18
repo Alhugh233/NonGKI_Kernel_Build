@@ -1,7 +1,21 @@
 name: Build Kernel Mi Note 3 with KSU
 on:
   workflow_call:
+    inputs:
+      KPM:
+        type: string
+        default: "N/A"
   workflow_dispatch:
+    inputs:
+      KPM:
+        type: choice
+        description: "KPM实现方式"
+        required: true
+        default: "N/A"
+        options:
+          - "KPM_PATCH"
+          - "KPM_ONLY"
+          - "N/A"
 env:
   HOOK_METHOD: "normal" # manual hook method,can choice vfs and normal.
 
@@ -216,6 +230,9 @@ jobs:
             set_config "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y"
             set_config "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y"
             set_config "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y"
+          fi
+          if [[ "${{ github.event.inputs.KPM }}" == "KPM_PATCH" || "${{ github.event.inputs.KPM }}" == "KPM_ONLY" ]]; then
+            set_config "CONFIG_KPM=y"
           fi
 
       - name: Set Pack Method and KernelSU and SUSFS
@@ -445,6 +462,28 @@ jobs:
           else
             make CC="ccache clang" O=out ARCH=arm64 ${{ env.CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }} ${{ env.GCC_64 }} ${{ env.GCC_32 }} ${{ env.DEFCONFIG_NAME }}
             make -j$(nproc --all) CC="ccache clang" O=out ARCH=arm64 ${{ env.CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }} ${{ env.GCC_64 }} ${{ env.GCC_32 }}
+          fi
+
+      - name: Apply KPM Patch
+        if: ${{ github.event.inputs.KPM == 'KPM_PATCH' }}
+        run: |
+          cd $GITHUB_WORKSPACE
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git --depth=1
+          IMAGE_DIR="$GITHUB_WORKSPACE/device_kernel/out/arch/arm64/boot"
+          cd "$IMAGE_DIR"
+          if [[ -f "Image" ]]; then
+            cp $GITHUB_WORKSPACE/SukiSU_patch/kpm/patch_linux .
+            chmod +x patch_linux
+            ./patch_linux
+            mv -f oImage Image
+            rm -f Image.gz Image.gz-dtb
+            gzip -ck Image > Image.gz
+            if [[ -f "dtb" ]]; then
+              cat Image.gz dtb > Image.gz-dtb
+            fi
+            echo "KPM patch applied successfully."
+          else
+            echo "Image not found, skipping KPM patch."
           fi
 
       - name: Make Anykernel3 Flasher
