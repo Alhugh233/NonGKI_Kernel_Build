@@ -435,6 +435,12 @@ jobs:
           key: build-kernel-${{ env.DEVICE_NAME }}${{ env.UPLOADNAME }}
           max-size: 2G
 
+      - name: Remove -dirty suffix
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel
+          git config user.email "ci@github.com" && git config user.name "CI Builder"
+          git add -A && git commit -m "CI: remove dirty suffix" || true
+
       - name: Build Kernel
         run: |
           export PATH=$GITHUB_WORKSPACE/clang-custom/bin:$PATH
