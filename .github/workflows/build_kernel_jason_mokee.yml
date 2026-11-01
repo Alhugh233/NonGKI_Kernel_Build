@@ -190,6 +190,18 @@ jobs:
           fi
           echo "KERNEL_VERSION=$(head -n 3 device_kernel/Makefile | grep -E 'VERSION|PATCHLEVEL' | awk '{print $3}' | paste -sd '.')" >> $GITHUB_ENV
 
+      - name: Fix BakaSU preinit runner target
+        run: |
+          RUNNER_MK="$GITHUB_WORKSPACE/device_kernel/KernelSU/kernel/tools/code_generation/preinit_runner/preinit_runner.mk"
+          if [ -f "$RUNNER_MK" ]; then
+            if ! grep -q '^KSU_RUNNER_CFLAGS += --target=' "$RUNNER_MK"; then
+              printf '\nKSU_RUNNER_CFLAGS += --target=aarch64-linux-gnu\n' >> "$RUNNER_MK"
+            fi
+            grep -n 'KSU_RUNNER_CFLAGS' "$RUNNER_MK"
+          else
+            echo "BakaSU preinit runner Makefile not found, skip"
+          fi
+
       - name: Set KSU and SUSFS for DEFCONFIG
         run: |
           cd $GITHUB_WORKSPACE/device_kernel
@@ -277,8 +289,8 @@ jobs:
             echo "Disabled SUSFS !"
           fi
 
-      # ReSukiSU already has its own patches, skip auto-patching
-      - name: Patch Kernel for no-kprobe (SKIP for ReSukiSU)
+      # BakaSU already has its own patches, skip auto-patching
+      - name: Patch Kernel for no-kprobe (SKIP for BakaSU)
         if: false
         run: |
           cd $GITHUB_WORKSPACE
