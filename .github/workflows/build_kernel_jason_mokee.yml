@@ -450,8 +450,12 @@ jobs:
       - name: Remove -dirty suffix
         run: |
           cd $GITHUB_WORKSPACE/device_kernel
-          git config user.email "ci@github.com" && git config user.name "CI Builder"
-          git add -A && git commit -m "CI: remove dirty suffix" || true
+          # Keep the original commit hash; only strip the -dirty marker.
+          # The old CI step committed the working tree, which changed the
+          # version suffix and made the build commit a moving target.
+          sed -i 's/ -dirty//g' scripts/setlocalversion
+          sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' scripts/setlocalversion
+          grep -n 'dirty\|res=$(echo' scripts/setlocalversion || true
 
       - name: Build Kernel
         run: |
